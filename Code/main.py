@@ -1,65 +1,58 @@
-import BaseConoscenza as KB
-import Classificatore as clas
-import Grafo as graph
+import KnowledgeBase as KB
+import Classifier as clas
+import Graph as graph
 import os.path
 from PIL import Image 
 
-#path assoluto per l'apertura dell'immagine
 script_dir = os.path.dirname(os.path.abspath(__file__))
 im = Image.open(os.path.join(script_dir, 'FAO37_sottozone.png'))
 
 
-def menu(inputUtente):
+def menu(OptionInput):
+    options = {
+        "classification": clas.classifier,
+        "classifierEvalutation": clas.valutation,
+        "showFAOZones": im.show,
+        "findVeryLowPollutionZones": KB.findVeryLowPollutionZones,
+        "findLowPollutionZones": KB.findLowPollutionZones,
+        "findModeratePollutionZones": KB.findModeratePollutionZones,
+        "findHighPollutionZones": KB.findHighPollutionZones,
+        "findVeryHighPollutionZones": KB.findVeryHighPollutionZones,
+        "createPollutionList": KB.createPollutionList,
+        "findPath": graph.findPath,
+        "requestPassage": KB.requestPassage,
+        "pollutionZoneQuery": KB.pollutionZoneQuery,
+        "exit": lambda: 0
+    }
 
+    if OptionInput in options:
+        user_func = options[OptionInput]
+        if OptionInput == "findPath":
+            starting_zone = input("Insert the departure FAO zone (e.g., 1.1): ")
+            destination_zone = input("Insert the destination FAO zone (e.g., 1.2): ")
+            user_func(starting_zone, destination_zone)
+        elif OptionInput == "verifyPassage":
+            starting_zone = input("Insert the starting zone (e.g., 1.1): ")
+            destination_zone = input("Insert the destination zone (e.g., 1.2): ")
+            user_func(starting_zone, destination_zone)
+        elif OptionInput == "verifyPollutionZone":
+            zone = input("Insert the zone to check the pollution level (e.g., 1.1): ")
+            pollution = input("Choose the pollution level to test (veryLow/low/moderate/high/veryHigh): ")
+            user_func(zone, pollution)
+        else:
+            user_func()
+    else:
+        print(f"Invalid input: {OptionInput}")
 
-    if(inputUtente == "classificazione"):
-        clas.classificatore()
-    elif(inputUtente == "valutazioneClassificatore"):
-        clas.valutazione()
-    elif(inputUtente == "mostraZoneFAO"):
-        im.show()
-    elif(inputUtente == "trovaZoneInquinamentoMoltoBasso"):
-        lista = KB.trovaZoneMoltoBasso()
-        print(lista)
-    elif(inputUtente == "trovaZoneInquinamentoBasso"):
-        lista = KB.trovaZoneBasso()
-        print(lista)
-    elif(inputUtente == "trovaZoneInquinamentoModerato"):
-        lista = KB.trovaZoneModerato()
-        print(lista)
-    elif(inputUtente == "trovaZoneInquinamentoAlto"):
-        lista = KB.trovaZoneAlto()
-        print(lista)
-    elif(inputUtente == "trovaZoneInquinamentoMoltoAlto"):
-        lista = KB.trovaZoneMoltoAlto()
-        print(lista)
-    elif(inputUtente == "visualizzaListaInquinamenti"):
-        lista = KB.creaListaInquinamenti()
-        print(lista)
-    elif(inputUtente == "trovaPercorso"):
-        zonaPartenza = input("Inserisci la zona FAO di partenza (es. 1.1): ")
-        zonaArrivo = input("Inserisci la zona FAO di destinazione (es 1.2): ")
-        graph.trovaPercorso(zonaPartenza, zonaArrivo)
-    elif(inputUtente == "verificaPassaggio"):
-        zonaPartenza = input("Inserisci l'zona da dove vuoi partire (es. 1.1): ")
-        zonaArrivo = input("Inserisci l'zona in cui vuoi arrivare (es. 1.2): ")
-        KB.domandaPassaggio(zonaPartenza, zonaArrivo)
-    elif(inputUtente == "verificaInquinamentoZona"):
-        zona = input("Inserisci l'zona di cui vuoi verificare il livello di inquinamento (es. 1.1): ")
-        inquinamento = input("Scegli il livello di inquinamento da provare (moltoBasso/basso/moderato/alto/moltoAlto): ")
-        KB.domandaInquinamentoZona(zona, inquinamento)
-    elif(inputUtente == "esci"):
-        print("-------------------------------------------------------------------------\n")
-        return 0
 
 if __name__ == '__main__':
     print("-------------------------------------------------------------------------")
-    print("Benvenuto in SafeFishing\n")
-    print("Comandi disponibili: \n")
-    print("- classificazione;\n- valutazioneClassificatore;\n- mostraZoneFAO;\n- trovaZoneInquinamentoMoltoBasso;\n- trovaZoneInquinamentoBasso;\n- trovaZoneInquinamentoModerato;\n- trovaZoneInquinamentoAlto;\n- trovaZoneInquinamentoMoltoAlto;\n- visualizzaListaInquinamenti;\n- trovaPercorso;\n- verificaPassaggio;\n- verificaInquinamentoZona;\n- esci.\n")
+    print("Welcome in SafeFishing\n")
+    print("Available commands: \n")
+    print("- classification\n- classifierEvalutation\n- showFAOZones\n- findVeryLowPollutionZone\n- findLowPollutionZone\n- findModeratePollutionZone\n- findHighPollutionZone\n- findVeryHighPollutionZone\n- displayPollutionList\n- findPath\n- verifyPassage\n- verifyPollutionLevel\n- exit\n")
 
-    inputUtente = None
-    while (inputUtente != "esci"):
-        inputUtente = input("Inserire comando: ")
-        menu(inputUtente)
+    OptionInput = None
+    while (OptionInput != "exit"):
+        OptionInput = input("Enter command: ")
+        menu(OptionInput)
 
