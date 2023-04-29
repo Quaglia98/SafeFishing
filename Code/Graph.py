@@ -1,4 +1,4 @@
-from ast import Dict, List
+from typing import List, Dict
 import numpy as np
 
 class Graph:
@@ -107,8 +107,8 @@ class Node:
 class Zone:
     def __init__(self, name: str):
         self.name = name
-        self.pollution_factors = create_pollution()
-        self.pollution = assign_pollution(self.pollution_factors)
+        self.pollution_percent = create_pollution()
+        self.pollution = assign_pollution(self.pollution_percent)
 
 
 
@@ -136,18 +136,19 @@ def  calculate_heuristic(start: float, end: float) -> float:
 
 #This function is used to find the path from Zone A to Zone B in the graph.
 #It returns a vector that stores all the heuristics for the zones that are in between A and B.
-def get_heuristics(Zone: Zone, Nodes: List[Zone]) -> Dict[str, float]:
-    return {z.name: calculate_heuristic(Zone.pollution_percent, z.pollution_percent) for z in nodes}
+def get_heuristics(zona: Zone, nodes: list[Zone]) -> Dict[str, float]:
+    return {z.name: calculate_heuristic(zona.pollution_percent, z.pollution_percent) for z in nodes}
 
 #Verify that an adjacent node has been added to the list of nodes yet to be examined (open).
-def should_add_neighbor(open: List[Node], neighbor: Node) -> bool:
+def should_add_neighbor(open: list[Node], neighbor: Node) -> bool:
     for node in open:
-        if neighbor == node and neighbor.f > node.f:
+        if neighbor == node and neighbor.f_cost >= node.f_cost:
             return False
     return True
 
+
 # A* Search
-def search_a_star(graph, heuristics, start: Zone, goal: Zone):
+def search_a_star(graph: Graph, heuristics: Dict[str, float], start: Zone, goal: Zone) -> List[str]:
     """Finds the shortest path between start and goal using A* search."""
     open_list = []
     closed_list = []
@@ -168,38 +169,43 @@ def search_a_star(graph, heuristics, start: Zone, goal: Zone):
             path.append(start_node.name)
             return list(reversed(path))
 
-        for neighbor_name, cost in graph[current_node.name].items():
+        if current_node.name not in graph.graph_dict:
+            continue
+
+        for neighbor_name, cost in graph.graph_dict[current_node.name].items():
             neighbor = Node(neighbor_name, current_node)
             if neighbor in closed_list:
                 continue
-            neighbor.g = sum([current_node.g, cost]) / 2
-            neighbor.h = heuristics.get(neighbor.name)
-            neighbor.f = sum([neighbor.g, neighbor.h]) / 2
+            neighbor.g_cost = current_node.g_cost + cost
+            neighbor.h_cost = heuristics.get(neighbor.name)
+            neighbor.f_cost = neighbor.g_cost + neighbor.h_cost
             if should_add_neighbor(open_list, neighbor):
                 open_list.append(neighbor)
 
     return None
 
+
+
 nodes = []
-zone1_1 = nodes("1.1")
+zone1_1 = Zone("1.1")
 nodes.append(zone1_1)
-zone1_2 = nodes("1.2")
+zone1_2 = Zone("1.2")
 nodes.append(zone1_2)
-zone1_3 = nodes("1.3")
+zone1_3 = Zone("1.3")
 nodes.append(zone1_3)
-zone2_1 = nodes("2.1")
+zone2_1 = Zone("2.1")
 nodes.append(zone2_1)
-zone2_2 = nodes("2.2")
+zone2_2 = Zone("2.2")
 nodes.append(zone2_2)
-zone3_1 = nodes("3.1")
+zone3_1 = Zone("3.1")
 nodes.append(zone3_1)
-zone3_2 = nodes("3.2")
+zone3_2 = Zone("3.2")
 nodes.append(zone3_2)
-zone4_1 = nodes("4.1")
+zone4_1 = Zone("4.1")
 nodes.append(zone4_1)
-zone4_2 = nodes("4.2")
+zone4_2 = Zone("4.2")
 nodes.append(zone4_2)
-zone4_3 = nodes("4.3")
+zone4_3 = Zone("4.3")
 nodes.append(zone4_3)
 
 
@@ -222,13 +228,13 @@ def generateGraph():
 
 
     graph.convert_to_undirected()
-    zone = nodes.copy()
+    zones = nodes.copy()
     i = 0
 
-    while (i < (len(zone))):
-        if (zone[i].pollution == "veryHigh"):
-            graph.remove_node(zone, zone[i].name)
-            zone.pop(i)
+    while (i < (len(zones))):
+        if (zones[i].pollution == "veryHigh"):
+            graph.remove_node(zones, zones[i].name)
+            zones.pop(i)
             i = i - 1
         i = i + 1
 
@@ -247,9 +253,11 @@ def findPath(start, destination):
     if (startingZone == None or destinationZone == None):
         print("Wrong Input!")
         return
+    
     graph = generateGraph()
 
-    euristics = get_heuristics(destinationZone, nodes)
+    heuristics  = get_heuristics(destinationZone, nodes)
 
-    path = search_a_star(graph, euristics, startingZone, destinationZone)
+    path = search_a_star(graph, heuristics , startingZone, destinationZone)
+    
     print(path)

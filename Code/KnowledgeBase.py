@@ -29,7 +29,7 @@ def createPollutionValuesList():
     pollutionValuesList = {}
     for i in range(len(nodes)):
         pollution = nodes[i].pollution
-        string = (nodes[i].name + "_" + pollution)
+        string = (nodes[i].name + "_" + str(pollution))
         pollutionValuesList[string] = True
     return pollutionValuesList
 
@@ -178,10 +178,11 @@ def pollutionZoneQuery(zone: str, pollution_level: str):
 
 #Check if it is possible to move from a Zone A to a Zone B
 def requestPassage(startingZone: str, destinationZone: str):
-
+    # Check if starting zone exists
     if (not zoneExists(startingZone)):
         print("The starting zone entered does not exist. Please enter a valid zone.")
         return
+     # Check if destination zone exists
     if (not zoneExists(destinationZone)):
         print("The destination zone entered does not exist. Please enter a valid zone.")
         return
@@ -192,19 +193,24 @@ def requestPassage(startingZone: str, destinationZone: str):
     userInput = ""
     verified = False
 
+    # Check if there's a boundary between starting zone and destination zone
     if (neighborZonesList.get(compareString1) == None or neighborZonesList.get(compareString2) == None):
         failDict[1] = True
     else:
         failDict[1] = False
-
+        
+    # Check if starting zone has not very high pollution
     failDict[2] = notVeryHighPollution(startingZone)
+    # Check if destination zone has not very high pollution
     failDict[3] = notVeryHighPollution(destinationZone)
 
+    # Print YES if all conditions are met, else print NO
     if (failDict.get(1) == True and failDict.get(2) == True and failDict.get(3) == True):
         print("YES")
     else:
         print("NO")
 
+    # Provide explanation upon request
     while verified is False and userInput.lower() != "how":
         userInput = input(
             "Type (how) for an explanation or (exit) to terminate: ")
@@ -213,11 +219,13 @@ def requestPassage(startingZone: str, destinationZone: str):
         if userInput.lower() == "how":
             print("requestPassage(" + startingZone + ", " + destinationZone + ") <=> boundary(" + startingZone + ","
                   + destinationZone + ") and notVeryHighPollution(" + startingZone + ") and notVeryHighPollution(" + destinationZone + ")")
+            
+            # Provide more detailed explanation for each condition
             while verified is False and userInput.lower() != "how 1" and userInput.lower() != "how 2" and userInput.lower() != "how 3":
                 userInput = input("To get into detail, type (how i), with i being the number of the atom,"
                                   "or type (exit) to terminate: ")
-                if (userInput.lower() == "esci"):
-                    verifica = True
+                if (userInput.lower() == "exit"):
+                    verified = True
                 if (userInput.lower() == 'how 1'):
                     print("boundary(" + startingZone + "," +
                           destinationZone + ") <=>", failDict.get(1))
@@ -255,12 +263,12 @@ def requestPassage(startingZone: str, destinationZone: str):
                                                 print(
                                                     "notHighPollution(" + destinationZone + ") <=> " + destinationZone + " Low pollution or " +
                                                     destinationZone + " Moderate pollution or " + destinationZone + " High pollution")
-                                            while (verification == False and userInput.lower() != "how 1" and userInput.lower() != "how 2"
+                                            while (verified == False and userInput.lower() != "how 1" and userInput.lower() != "how 2"
                                                 and userInput.lower() != "how 3" and userInput.lower() != "how 4"):
                                                 userInput = input(
                                                     "To enter details, enter (how i), with i as the number of the atom, or enter (exit) to terminate: ")
                                                 if (userInput.lower() == "exit"):
-                                                    verification = True
+                                                    verified = True
                                                 if (userInput.lower() == "how 1"):
                                                     print(destinationZone + "_Low pollution <=> ",
                                                         findPollutionValueForZone(destinationZone + "_low"))
