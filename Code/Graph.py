@@ -1,190 +1,159 @@
-from typing import List, Dict
 import numpy as np
 
+
 class Graph:
-    """
-    A class representing a graph.
+    # Initialize graph
+    def __init__(self, graphDict=None, oriented=True):
+        self.graphDict = graphDict or {}
+        self.oriented = oriented
+        if not oriented:
+            self.convertToUndirected()
+    # Convert a directed graph to an undirected graph
 
-    Attributes:
-        graph_dict (dict): A dictionary representing the graph.
-        directed (bool): A boolean indicating whether the graph is directed.
-    """
+    def convertToUndirected(self):
+        for a in list(self.graphDict.keys()):
+            for (b, dist) in self.graphDict[a].items():
+                self.graphDict.setdefault(b, {})[a] = dist
 
-    def __init__(self, graph_dict=None, directed=True):
-        """
-        Initializes the graph.
+    # Add a connection between node A and B with a given weight,
+    # if the graph is undirected, an additional connection from node B to node A is added
+    def connect(self, A, B, distance=1):
+        self.graphDict.setdefault(A, {})[B] = distance
+        if not self.oriented:
+            self.graphDict.setdefault(B, {})[A] = distance
 
-        Args:
-            graph_dict (dict): A dictionary representing the graph.
-            directed (bool): A boolean indicating whether the graph is directed.
-        """
-        self.graph_dict = graph_dict or {}
-        self.directed = directed
-        if not directed:
-            self.convert_to_undirected()
-
-    def convert_to_undirected(self):
-        """
-        Converts a directed graph to an undirected graph.
-        """
-        for a in list(self.graph_dict.keys()):
-            for b, dist in self.graph_dict[a].items():
-                self.graph_dict.setdefault(b, {})[a] = dist
-
-    def add_connection(self, a: str, b: str, distance: int = 1):
-        """
-        Adds a connection between node A and B with a distance, in the case of an undirected graph, adds an additional
-        connection from node B to node A.
-
-        Args:
-            a (str): A string representing node A.
-            b (str): A string representing node B.
-            distance (int): An integer representing the distance between node A and B. Defaults to 1.
-        """
-        self.graph_dict.setdefault(a, {})[b] = distance
-        if not self.directed:
-            self.graph_dict.setdefault(b, {})[a] = distance
-
-    def get(self, a: str, b: str = None) -> dict:
-        """
-        Gets the adjacent nodes.
-
-        Args:
-            a (str): A string representing the node to get the adjacent nodes of.
-            b (str): A string representing the adjacent node to get the distance of. Defaults to None.
-
-        Returns:
-            dict: A dictionary representing the adjacent nodes and their distances.
-        """
-        connections = self.graph_dict.setdefault(a, {})
+    # Get adjacent nodes
+    def get(self, a, b=None):
+        connections = self.graphDict.setdefault(a, {})
         if b is None:
             return connections
         else:
-            return connections.get(b)
+            return connections.get(b, float('inf'))
 
-    def get_nodes(self) -> list:
-        """
-        Gets a list of nodes.
-
-        Returns:
-            list: A list of strings representing the nodes.
-        """
-        nodes = set(self.graph_dict.keys()) | set(sum(self.graph_dict.values(), {}).keys())
+    # Return a list of nodes
+    def nodes(self):
+        s1 = set([k for k in self.graphDict.keys()])
+        s2 = set([k2 for v in self.graphDict.values() for k2, v2 in v.items()])
+        nodes = s1.union(s2)
         return list(nodes)
 
-    def remove_node(self, zone_list: list, zone_name: str):
-        """
-        Removes a node, which is a zone, from the graph.
+    # Remove a node, i.e., a zone from the graph
+    def remove(self, zoneList, zoneName):
+        for i in range(len(zoneList)):
+            if (self.graphDict[zoneList[i].name].get(zoneName) != None):
+                self.graphDict[zoneList[i].name].pop(zoneName)
+        self.graphDict.pop(zoneName)
 
-        Args:
-            zone_list (list): A list of zones.
-            zone_name (str): A string representing the name of the zone to remove.
-        """
-        for zone in zone_list:
-            if self.graph_dict[zone.name].get(zone_name) is not None:
-                self.graph_dict[zone.name].pop(zone_name)
-        self.graph_dict.pop(zone_name)
-        
 
 class Node:
+    # Create an instance of Node
     def __init__(self, name: str, parent: str):
         self.name = name
         self.parent = parent
-        self.g_cost = 0  # Distance from the start node
-        self.h_cost = 0  # Estimated distance to the goal node
-        self.f_cost = 0  # Total cost of the node (g_cost + h_cost)
+        # Distance from initial node
+        self.g = 0
+        # Distance from target node
+        self.h = 0
+        # Total cost of distances
+        self.f = 0
+    # Compare nodes
 
     def __eq__(self, other):
         return self.name == other.name
 
+    # Sort nodes based on cost
     def __lt__(self, other):
-         return self.f_cost < other.f_cost
+        return self.f < other.f
 
+    # Print nodes
     def __repr__(self):
-        return f'({self.name}, {self.f_cost})'
+        return '({0},{1})'.format(self.name, self.f)
 
 
 class Zone:
+    # Initialize the class
     def __init__(self, name: str):
         self.name = name
-        self.pollution_percent = create_pollution()
-        self.pollution = assign_pollution(self.pollution_percent)
+        self.pollutionFactors = createPollution()
+        self.pollution = assignPollution(self.pollutionFactors)
 
+# Generate a random pollution value between 0 and 100.
+def createPollution():
+    pollutionFactors = np.random.randint(100)
 
+    return pollutionFactors
 
-def create_pollution():
-    pollution_percent = np.random.randint(100)
+# Assign the pollution level
+def assignPollution(pollutionFactors):
+    if pollutionFactors <= 20:
+        return 'veryLow'
+    elif pollutionFactors <= 40:
+        return 'low'
+    elif pollutionFactors <= 60:
+        return 'moderate'
+    elif pollutionFactors <= 80:
+        return 'high'
+    else:
+        return 'veryHigh'
+
+# Calculates the actual cost of the path from node A to node B
+def calculateRealCost(start, target):
+    cost = (start + target) / 2
     
-    return pollution_percent
-
-
-def assign_pollution(pollution_percent):
-    levels = {0: 'veryLow', 1: 'low', 2: 'moderate', 3: 'high', 4: 'veryHigh'}
-    level_index = min(int(pollution_percent / 20), 4)
-    return levels[level_index]
-
-
-#Compute the actual cost of the path from node A to node B.
-def calculate_real_cost(start: float, end: float) -> float:
-    cost = (start + end) / 2
     return cost
 
-#Estimates the cost of the path from node A to node B.
-def  calculate_heuristic(start: float, end: float) -> float:
-    heuristic = (start + end) / 2
+# Estimates the cost of the path from node A to node B
+def calculateHeuristic(start, target):
+    heuristic = (start + target) / 2
     return heuristic
 
-#This function is used to find the path from Zone A to Zone B in the graph.
-#It returns a vector that stores all the heuristics for the zones that are in between A and B.
-def get_heuristics(zona: Zone, nodes: list[Zone]) -> Dict[str, float]:
-    return {z.name: calculate_heuristic(zona.pollution_percent, z.pollution_percent) for z in nodes}
+# Used to find the path from Zone A to Zone B in the graph
+# Returns a vector that keeps all the heuristics for the zones in between A and B
+def heuristicVector(zone:Zone, zoneList):
+    heuristics = {}
+    for i in range(len(zoneList)):
+        heuristics[zoneList[i].name] = calculateHeuristic(zone.pollutionFactors, zoneList[i].pollutionFactors)
+    return heuristics
 
-#Verify that an adjacent node has been added to the list of nodes yet to be examined (open).
-def should_add_neighbor(open: list[Node], neighbor: Node) -> bool:
+# Checks whether an adjacent node has been added to the list of nodes yet to be examined (open)
+def checkAddedNeighbor(open, neighbor):
     for node in open:
-        if neighbor == node and neighbor.f_cost >= node.f_cost:
+        if (neighbor == node and neighbor.f > node.f):
             return False
     return True
 
+# A* search
+def AStarSearch(graph, heuristics, start: Zone, destination: Zone):
+    
+    open = []
+    closed = []
+    startNode = Node(start.name, None)
+    golNode = Node(destination.name, None)
+    open.append(startNode)
 
-# A* Search
-def search_a_star(graph: Graph, heuristics: Dict[str, float], start: Zone, goal: Zone) -> List[str]:
-    """Finds the shortest path between start and goal using A* search."""
-    open_list = []
-    closed_list = []
-    start_node = Node(start.name, None)
-    goal_node = Node(goal.name, None)
-    open_list.append(start_node)
+    while len(open) > 0:
+        open.sort()
+        currentNode = open.pop(0)
+        closed.append(currentNode)
 
-    while len(open_list) > 0:
-        open_list.sort()
-        current_node = open_list.pop(0)
-        closed_list.append(current_node)
-
-        if current_node is goal_node:
+        if currentNode == golNode:
             path = []
-            while current_node != start_node:
-                path.append(current_node.name)
-                current_node = current_node.parent
-            path.append(start_node.name)
-            return list(reversed(path))
-
-        if current_node.name not in graph.graph_dict:
-            continue
-
-        for neighbor_name, cost in graph.graph_dict[current_node.name].items():
-            neighbor = Node(neighbor_name, current_node)
-            if neighbor in closed_list:
+            while currentNode != startNode:
+                path.append(currentNode.name)
+                currentNode = currentNode.parent
+            path.append(startNode.name)
+            return path[::-1]
+        neighbor = graph.get(currentNode.name)
+        for key, value in neighbor.items():
+            neighbor = Node(key, currentNode)
+            if (neighbor in closed):
                 continue
-            neighbor.g_cost = current_node.g_cost + cost
-            neighbor.h_cost = heuristics.get(neighbor.name)
-            neighbor.f_cost = neighbor.g_cost + neighbor.h_cost
-            if should_add_neighbor(open_list, neighbor):
-                open_list.append(neighbor)
-
+            neighbor.g = (currentNode.g + graph.get(currentNode.name, neighbor.name)) / 2
+            neighbor.h = heuristics.get(neighbor.name)
+            neighbor.f = (neighbor.g + neighbor.h) / 2
+            if (checkAddedNeighbor(open, neighbor) == True):
+                open.append(neighbor)
     return None
-
-
 
 nodes = []
 zone1_1 = Zone("1.1")
@@ -209,38 +178,48 @@ zone4_3 = Zone("4.3")
 nodes.append(zone4_3)
 
 
-#Generate the graph with the corresponding weighted connections between the nodes.
+# Generates the graph
 def generateGraph():
 
     graph = Graph()
 
-    graph.add_connection(zone1_1.name, zone1_2.name, calculate_real_cost(zone1_1.pollution_percent, zone1_2.pollution_percent))
-    graph.add_connection(zone1_1.name, zone1_3.name, calculate_real_cost(zone1_1.pollution_percent, zone1_3.pollution_percent))
-    graph.add_connection(zone1_2.name, zone1_3.name, calculate_real_cost(zone1_2.pollution_percent, zone1_3.pollution_percent))
-    graph.add_connection(zone1_3.name, zone2_2.name, calculate_real_cost(zone1_3.pollution_percent, zone2_2.pollution_percent))
-    graph.add_connection(zone2_1.name, zone2_2.name, calculate_real_cost(zone2_1.pollution_percent, zone2_2.pollution_percent))
-    graph.add_connection(zone2_2.name, zone3_1.name, calculate_real_cost(zone2_2.pollution_percent, zone3_1.pollution_percent))
-    graph.add_connection(zone2_2.name, zone3_2.name, calculate_real_cost(zone2_2.pollution_percent, zone3_2.pollution_percent))
-    graph.add_connection(zone3_1.name, zone3_2.name, calculate_real_cost(zone3_1.pollution_percent, zone3_2.pollution_percent))
-    graph.add_connection(zone3_1.name, zone4_1.name, calculate_real_cost(zone3_1.pollution_percent, zone4_1.pollution_percent))
-    graph.add_connection(zone4_1.name, zone4_2.name, calculate_real_cost(zone4_1.pollution_percent, zone4_2.pollution_percent))
-    graph.add_connection(zone4_2.name, zone4_3.name, calculate_real_cost(zone4_2.pollution_percent, zone4_3.pollution_percent))
+    graph.connect(zone1_1.name, zone1_2.name, calculateRealCost(
+        zone1_1.pollutionFactors, zone1_2.pollutionFactors))
+    graph.connect(zone1_1.name, zone1_3.name, calculateRealCost(
+        zone1_1.pollutionFactors, zone1_3.pollutionFactors))
+    graph.connect(zone1_2.name, zone1_3.name, calculateRealCost(
+        zone1_2.pollutionFactors, zone1_3.pollutionFactors))
+    graph.connect(zone1_3.name, zone2_2.name, calculateRealCost(
+        zone1_3.pollutionFactors, zone2_2.pollutionFactors))
+    graph.connect(zone2_1.name, zone2_2.name, calculateRealCost(
+        zone2_1.pollutionFactors, zone2_2.pollutionFactors))
+    graph.connect(zone2_2.name, zone3_1.name, calculateRealCost(
+        zone2_2.pollutionFactors, zone3_1.pollutionFactors))
+    graph.connect(zone2_2.name, zone3_2.name, calculateRealCost(
+        zone2_2.pollutionFactors, zone3_2.pollutionFactors))
+    graph.connect(zone3_1.name, zone3_2.name, calculateRealCost(
+        zone3_1.pollutionFactors, zone3_2.pollutionFactors))
+    graph.connect(zone3_1.name, zone4_1.name, calculateRealCost(
+        zone3_1.pollutionFactors, zone4_1.pollutionFactors))
+    graph.connect(zone4_1.name, zone4_2.name, calculateRealCost(
+        zone4_1.pollutionFactors, zone4_2.pollutionFactors))
+    graph.connect(zone4_2.name, zone4_3.name, calculateRealCost(
+        zone4_2.pollutionFactors, zone4_3.pollutionFactors))
 
-
-    graph.convert_to_undirected()
+    graph.convertToUndirected()
     zones = nodes.copy()
     i = 0
 
     while (i < (len(zones))):
         if (zones[i].pollution == "veryHigh"):
-            graph.remove_node(zones, zones[i].name)
+            graph.remove(zones, zones[i].name)
             zones.pop(i)
             i = i - 1
         i = i + 1
 
     return graph
 
-#Find a path from A to B
+# Find path from a Node A to a Node B
 def findPath(start, destination):
     startingZone = None
     destinationZone = None
@@ -251,13 +230,11 @@ def findPath(start, destination):
             destinationZone = nodes[i]
 
     if (startingZone == None or destinationZone == None):
-        print("Wrong Input!")
+        print("Wrong input!")
         return
-    
     graph = generateGraph()
 
-    heuristics  = get_heuristics(destinationZone, nodes)
+    heuristics = heuristicVector(destinationZone, nodes)
 
-    path = search_a_star(graph, heuristics , startingZone, destinationZone)
-    
+    path = AStarSearch(graph, heuristics, startingZone, destinationZone)
     print(path)
